@@ -16,5 +16,12 @@
             "name": "githen",
             "email": "githen@foxmail.com"
         }
-    ]
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Githen\\LaravelTencentVod\\VodProvider"
+            ]
+        }
+    }
 }

@@ -12,6 +12,12 @@ class VodController extends Controller
         $this->middleware(config('vod.gloabal.auth'));
     }
 
+    /**
+     * 获取签名
+     * @param Request $request
+     * @param $label
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getSignature(Request $request, $label)
     {
         $result = app('jiaoyu.tencent.vod')->getSignature($label);
@@ -20,6 +26,13 @@ class VodController extends Controller
         }
 
         return $this->message('0000', $result['message'], $result['data']);
+    }
+
+    public function expireTime(Request $request, $label)
+    {
+        $result = app('jiaoyu.tencent.vod')->ModifyMediaInfo($label, $request->all());
+        dd($result);
+
     }
 
     private function message($code, $message, $data = [])

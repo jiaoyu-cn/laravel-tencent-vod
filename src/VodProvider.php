@@ -2,6 +2,7 @@
 
 namespace Githen\LaravelTencentVod;
 
+use GuzzleHttp\Client;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 
@@ -34,6 +35,9 @@ class VodProvider extends ServiceProvider
         // 注册api获取上传签名
         Route::middleware('web')->get( 'jiaoyu/tencent/vod/sign/{param}', '\Githen\LaravelTencentVod\Controllers\VodController@getSignature')
             ->name('jiaoyu.tencent.vod.sign'); // 文件上传
+        // 视频存放时长
+        Route::middleware('web')->get( 'jiaoyu/tencent/vod/expire/{param}', '\Githen\LaravelTencentVod\Controllers\VodController@expireTime')
+            ->name('jiaoyu.tencent.vod.expire'); // 文件上传
     }
 
     /**
@@ -59,7 +63,7 @@ class VodProvider extends ServiceProvider
     {
         // 获取文件配置类型
         if (!$config = config('vod.'.$label, [])){
-            return $this->message(1, "获取配置文件失败：".$label);
+            return $this->message(1001, "获取配置文件失败：".$label);
         }
 
         $params = [
@@ -74,6 +78,108 @@ class VodProvider extends ServiceProvider
         $sign = base64_encode(hash_hmac('SHA1', $params, $config['secret_key']?? '', true).$params);
 
         return $this->message(0, '成功', ['sign' => $sign]);
+    }
+
+    /**
+     * 修改视频基本信息
+     * @param $fileId
+     * @param $time
+     * @return void
+     */
+    public function ModifyMediaInfo($label, $params = [])
+    {
+        $whiteParam = ['FileId', 'Name', 'Description', 'ClassId', 'ExpireTime','CoverData'];
+        foreach ($params as $key => $val){
+            if (!in_array($key, $whiteParam)){
+                unset($params[$key]);
+                continue;
+            }
+
+            // 有效期处理
+            if ($key == 'ExpireTime' && is_numeric($params['ExpireTime'])){
+                $params['ExpireTime'] = date('c', time() + $params['ExpireTime']);
+            }
+            // 封面图处理 可考虑兼容http或文件目录
+
+        }
+        return $this->send($label, 'ModifyMediaInfo', $params);
+    }
+
+    private function send($label, $action, $params = [])
+    {
+        // 获取配置信息
+        if (! $config = config('vod.'.$label)){
+            return $this->message(1001, "获取配置文件失败：".$label);
+        }
+        $params['SubAppId'] = $config['sub_appid'];
+
+        // 生成签名
+        $curTime = time();
+        $authorization = $this->getAuthorization($config, $params,$action, $curTime);
+
+        // 执行请求
+        $client = new Client();
+        try {
+            $response = $client->request('POST', 'https://vod.tencentcloudapi.com/', [
+                'verify' => false,
+                'debug' => false,
+                'json' => $params,
+                'headers' => [
+                    'Authorization' => $authorization,
+                    'Content-Type' => 'application/json; charset=utf-8',
+                    'X-TC-Action' => $action,
+                    'X-TC-Timestamp' => $curTime,
+                    'X-TC-Version' => '2018-07-17',
+                    'X-TC-Region' => ''
+                ],
+            ]);
+        }catch (\Exception $e){
+            return $this->message(1, $e->getMessage());
+        }
+
+        if ($response->getStatusCode() != 200){
+            dd($response->getStatusCode(), $response->getReasonPhrase(), $response);
+        }
+        if(! $content = json_decode($response->getBody()->getContents(), true)){
+            return $this->message('2001', '请求失败');
+        }
+
+        if (isset($content['Response']['Error'])){
+            return  $this->message('2002', $content['Response']['Error']['Message']);
+        }
+
+        return $this->message(0, '请求成功', $content);
+    }
+
+    /** 生成签名
+     * @param $config
+     * @param $params
+     * @return string
+     */
+    private function getAuthorization($config, $params, $action, $curTime)
+    {
+        $curDate = gmdate("Y-m-d", $curTime);
+        $credentialScope = $curDate . '/vod/tc3_request';
+        $algorithm = "TC3-HMAC-SHA256";
+
+        $canonicalRequest = "POST\n/\n\n".
+            "content-type:application/json; charset=utf-8\n".
+            "host:vod.tencentcloudapi.com\n".
+            "x-tc-action:{$action}\n".
+            "content-type;host;x-tc-action\n".
+            hash("SHA256", json_encode($params));
+
+        $stringToSign = $algorithm ."\n".
+            $curTime . "\n".
+            $credentialScope . "\n".
+            hash("SHA256", $canonicalRequest);
+        
+        $signature = hash_hmac('SHA256', $curDate, 'TC3'.$config['secret_key'], true);
+        $signature = hash_hmac('SHA256', 'vod', $signature, true);
+        $signature = hash_hmac("SHA256", "tc3_request", $signature, true);
+        $signature = hash_hmac("SHA256", $stringToSign, $signature);
+
+        return $algorithm .' Credential='.$config['secret_id'].'/'.$credentialScope.', SignedHeaders=content-type;host;x-tc-action, Signature='.$signature;
     }
 
     private function message($code, $message, $data = [])

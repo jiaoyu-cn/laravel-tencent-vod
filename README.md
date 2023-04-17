@@ -49,17 +49,19 @@ return [
 ```
 
 
-| 参数               | 名称                       | 说明                                   | 备注       |
-|------------------|--------------------------|--------------------------------------|---------------|
-| dom              | 上传文件对应的<input type=file>标识 | 必填                                   |      |
-| signature        | 获取上传签名的方法或字符串标识   | 默认请求：jiaoyu/tencent/vod/sign/{字符串标识} | |
-| maxFilesize      | 文件大小                     | MB                                   |  |
-| acceptedFiles    | 允许上传文件后缀(.jpg,.png)      | 默认为.mp4                              |   |
-| chunkSize        | 分片大小                     | 单位：MB,默认2MB                          |     |
-| maxFiles         | 最多上传文件数                  | 非必填，默认：1                             |    |
-| progressInterval | 进程回调间隔                   | 非必填，默认：200ms                         |    |
-| replace          | MaxFiles为1时，是否直接替换       |                                      |    |
-| cover            | 上传的封面图 File资源对象          | 非必填                                  |       |
+| 参数               | 名称                        | 说明                                       | 备注                 |
+|------------------|---------------------------|------------------------------------------|--------------------|
+| dom              | 上传文件对应的<input type=file>标识 | 必填                                       |                    |
+| config           | 配置文件中的标识                  | 必填 |                    |
+| signature        | 获取上传签名的方法                 | 非必填，默认请求：jiaoyu/tencent/vod/sign/{config} |                    |
+| maxFilesize      | 文件大小                      | MB                                       |                    |
+| acceptedFiles    | 允许上传文件后缀(.jpg,.png)       | 默认为.mp4                                  |                    |
+| chunkSize        | 分片大小                      | 单位：MB,默认2MB                              |                    |
+| maxFiles         | 最多上传文件数                   | 非必填，默认：1                                 |                    |
+| progressInterval | 进程回调间隔                    | 非必填，默认：200ms                             |                    |
+| replace          | MaxFiles为1时，是否直接替换        |                                          |                    |
+| cover            | 上传的封面图 File资源对象           | 非必填                                      |                    |
+| expireTime       | 视频临时存放时长                  | 非必填,默认：7200 单位：秒                         | 直接存放，值设为 undefined |
 
 
 callbakck 参数
@@ -76,3 +78,14 @@ callbakck 参数
 
 type  media cover  done
 action  progress upload  done
+
+
+错误码
+
+| 错误码  | 说明                     | 备注 |
+|------|------------------------|----|
+| 1001 | 未获取到 config/vod.php中配置 |    |
+| 1002 | 请求异常                   |    |
+|      |                        |    |
+| 2001 | 请求腾讯，未获取到数据            |    |
+| 2002 | 腾讯云返回的报错信息             |    |

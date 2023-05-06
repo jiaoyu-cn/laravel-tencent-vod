@@ -63,7 +63,7 @@ class VodProvider extends ServiceProvider
     {
         // 获取文件配置类型
         if (!$config = config('vod.'.$label, [])){
-            return $this->message(1001, "获取配置文件失败：".$label);
+            return $this->message(1, "获取配置文件失败：".$label);
         }
 
         $params = [
@@ -84,11 +84,11 @@ class VodProvider extends ServiceProvider
      * 修改视频基本信息
      * @param $fileId
      * @param $time
-     * @return void
+     * @return array
      */
     public function ModifyMediaInfo($label, $params = [])
     {
-        $whiteParam = ['FileId', 'Name', 'Description', 'ClassId', 'ExpireTime','CoverData'];
+        $whiteParam = ['FileId', 'Name', 'Description', 'ClassId', 'ExpireTime','CoverData','InputType'];
         foreach ($params as $key => $val){
             if (!in_array($key, $whiteParam)){
                 unset($params[$key]);
@@ -102,16 +102,60 @@ class VodProvider extends ServiceProvider
             // 封面图处理 可考虑兼容http或文件目录
 
         }
-        return $this->send($label, 'ModifyMediaInfo', $params);
+        return $this->send($label, __FUNCTION__, $params);
     }
 
+
+    /**
+     * 视频转码
+     * @param $label
+     * @param $params
+     * @return array
+     */
+    public function ProcessMediaByProcedure($label, $params = [])
+    {
+        $whiteParam = ['FileId','ProcedureName', 'TasksPriority', 'TasksNotifyMode', 'SessionContext', 'SessionId'];
+
+        foreach ($params as $key => $val){
+            if (!in_array($key, $whiteParam)){
+                unset($params[$key]);
+            }
+        }
+        // 未设置转码流，读配置文件
+        if (empty($params['ProcedureName'])){
+            $params['ProcedureName'] = config('vod.'.$label.'.procedure_name','');
+        }
+
+        return $this->send($label, __FUNCTION__, $params);
+    }
+
+    /**
+     * 任务详情查询
+     * @param $label
+     * @param $params
+     * @return array
+     */
+    public function DescribeTaskDetail($label, $params = [])
+    {
+        $param['TaskId'] = $params['TaskId']??'';
+        return $this->send($label, __FUNCTION__, $params);
+    }
+
+    /**
+     * 发送请求
+     * @param $label
+     * @param $action
+     * @param $params
+     * @return array
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     */
     private function send($label, $action, $params = [])
     {
         // 获取配置信息
         if (! $config = config('vod.'.$label)){
-            return $this->message(1001, "获取配置文件失败：".$label);
+            return $this->message(1, "获取配置文件失败：".$label);
         }
-        $params['SubAppId'] = $config['sub_appid'];
+        $params['SubAppId'] = (int)$config['sub_appid'];
 
         // 生成签名
         $curTime = time();
@@ -120,32 +164,34 @@ class VodProvider extends ServiceProvider
         // 执行请求
         $client = new Client();
         try {
-            $response = $client->request('POST', 'https://vod.tencentcloudapi.com/', [
+            $response = $client->request('POST', 'https://vod.tencentcloudapi.com', [
                 'verify' => false,
                 'debug' => false,
-                'json' => $params,
                 'headers' => [
                     'Authorization' => $authorization,
                     'Content-Type' => 'application/json; charset=utf-8',
+                    'Host' => 'vod.tencentcloudapi.com',
                     'X-TC-Action' => $action,
                     'X-TC-Timestamp' => $curTime,
                     'X-TC-Version' => '2018-07-17',
                     'X-TC-Region' => ''
                 ],
+                'json' => $params,
+
             ]);
         }catch (\Exception $e){
-            return $this->message(1, $e->getMessage());
+            return $this->message(2, $e->getMessage());
         }
 
         if ($response->getStatusCode() != 200){
             dd($response->getStatusCode(), $response->getReasonPhrase(), $response);
         }
         if(! $content = json_decode($response->getBody()->getContents(), true)){
-            return $this->message('2001', '请求失败');
+            return $this->message(3, '请求失败');
         }
 
         if (isset($content['Response']['Error'])){
-            return  $this->message('2002', $content['Response']['Error']['Message']);
+            return  $this->message(4, $content['Response']['Error']['Message']);
         }
 
         return $this->message(0, '请求成功', $content);
@@ -164,22 +210,21 @@ class VodProvider extends ServiceProvider
 
         $canonicalRequest = "POST\n/\n\n".
             "content-type:application/json; charset=utf-8\n".
-            "host:vod.tencentcloudapi.com\n".
-            "x-tc-action:{$action}\n".
-            "content-type;host;x-tc-action\n".
+            "host:vod.tencentcloudapi.com\n\n".
+            "content-type;host\n".
             hash("SHA256", json_encode($params));
 
         $stringToSign = $algorithm ."\n".
             $curTime . "\n".
             $credentialScope . "\n".
             hash("SHA256", $canonicalRequest);
-        
+
         $signature = hash_hmac('SHA256', $curDate, 'TC3'.$config['secret_key'], true);
         $signature = hash_hmac('SHA256', 'vod', $signature, true);
         $signature = hash_hmac("SHA256", "tc3_request", $signature, true);
         $signature = hash_hmac("SHA256", $stringToSign, $signature);
 
-        return $algorithm .' Credential='.$config['secret_id'].'/'.$credentialScope.', SignedHeaders=content-type;host;x-tc-action, Signature='.$signature;
+        return $algorithm .' Credential='.$config['secret_id'].'/'.$credentialScope.', SignedHeaders=content-type;host, Signature='.$signature;
     }
 
     private function message($code, $message, $data = [])

@@ -28,9 +28,12 @@ class VodController extends Controller
         return $this->message('0000', $result['message'], $result['data']);
     }
 
-    public function expireTime(Request $request, $label)
+    public function modify(Request $request, $label)
     {
         $result = app('jiaoyu.tencent.vod')->ModifyMediaInfo($label, $request->all());
+        if ($result['code']){
+            return $this->message('1002', $result['message']);
+        }
         return $this->message('0000', $result['message'], $result['data']);
     }
 

@@ -34,10 +34,10 @@ class VodProvider extends ServiceProvider
 
         // 注册api获取上传签名
         Route::middleware('web')->get( 'jiaoyu/tencent/vod/sign/{param}', '\Githen\LaravelTencentVod\Controllers\VodController@getSignature')
-            ->name('jiaoyu.tencent.vod.sign'); // 文件上传
+            ->name('jiaoyu.tencent.vod.sign');
         // 视频存放时长
-        Route::middleware('web')->get( 'jiaoyu/tencent/vod/expire/{param}', '\Githen\LaravelTencentVod\Controllers\VodController@expireTime')
-            ->name('jiaoyu.tencent.vod.expire'); // 文件上传
+        Route::middleware('web')->get( 'jiaoyu/tencent/vod/modify/{param}', '\Githen\LaravelTencentVod\Controllers\VodController@modify')
+            ->name('jiaoyu.tencent.vod.modify');
     }
 
     /**
@@ -88,7 +88,7 @@ class VodProvider extends ServiceProvider
      */
     public function ModifyMediaInfo($label, $params = [])
     {
-        $whiteParam = ['FileId', 'Name', 'Description', 'ClassId', 'ExpireTime','CoverData','InputType'];
+        $whiteParam = ['FileId', 'Name', 'Description', 'ClassId', 'ExpireTime','CoverData'];
         foreach ($params as $key => $val){
             if (!in_array($key, $whiteParam)){
                 unset($params[$key]);
@@ -149,7 +149,7 @@ class VodProvider extends ServiceProvider
      * @return array
      * @throws \GuzzleHttp\Exception\GuzzleException
      */
-    private function send($label, $action, $params = [])
+    public function send($label, $action, $params = [])
     {
         // 获取配置信息
         if (! $config = config('vod.'.$label)){

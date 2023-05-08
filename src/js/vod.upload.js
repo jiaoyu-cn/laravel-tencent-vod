@@ -92,20 +92,20 @@ Vodupload.prototype = {
 
                 // 文件个数判断
                 if (Object.keys(that.uploadFiles).length >= that.config.maxFiles){
-                    eolError("超过最大上传" + that.config.maxFiles+'个限制，文件<code>'+ tmpFile.name +'</code>无法上传');
+                    that.callback('files', 'error',"超过最大上传" + that.config.maxFiles+'个限制，文件<code>'+ tmpFile.name +'</code>无法上传');
                     return;
                 }
 
                 // 文件类型判断
                 let fileType = tmpFile.name.slice(tmpFile.name.lastIndexOf('.'));
                 if(that.config.acceptedFiles.indexOf(fileType) == -1) {
-                    eolError("文件<code>" + tmpFile.name + '</code>的类型不支持');
+                    that.callback('files', 'error',"文件<code>" + tmpFile.name + '</code>的类型不支持');
                     continue;
                 }
 
                 // 文件大小判断
                 if (tmpFile.size > that.config.maxFilesize * 1048576){
-                    eolError("文件<code>" + tmpFile.name + '</code>的超过限制大小');
+                    that.callback('files', 'error',"文件<code>" + tmpFile.name + '</code>的超过限制大小');
                     continue;
                 }
 
@@ -161,7 +161,7 @@ Vodupload.prototype = {
 
             // 设置视频的存放时间
             if (typeof that.config.expireTime != "undefined"){
-                $.getJSON('/jiaoyu/tencent/vod/expire/'+that.config.config, {'ExpireTime': that.config.expireTime,'FileId': info.fileId}, function (data){
+                $.getJSON('/jiaoyu/tencent/vod/modify/'+that.config.config, {'ExpireTime': that.config.expireTime,'FileId': info.fileId}, function (data){
                     // console.log(data)
                 });
             }

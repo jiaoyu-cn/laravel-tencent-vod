@@ -3,6 +3,7 @@
 namespace Githen\LaravelTencentVod;
 
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\GuzzleException;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 
@@ -132,12 +133,26 @@ class VodProvider extends ServiceProvider
     /**
      * 任务详情查询
      * @param $label
-     * @param $params
+     * @param array $params
      * @return array
+     * @throws GuzzleException
      */
     public function DescribeTaskDetail($label, $params = [])
     {
         $param['TaskId'] = $params['TaskId']??'';
+        return $this->send($label, __FUNCTION__, $params);
+    }
+
+    /**
+     * 删除视频
+     * @param $label
+     * @param $params
+     * @return array
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     */
+    public function DeleteMedia($label, $params = [])
+    {
+        $param['FileId'] = $params['FileId']??'';
         return $this->send($label, __FUNCTION__, $params);
     }
 

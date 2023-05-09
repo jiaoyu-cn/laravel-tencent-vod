@@ -138,8 +138,8 @@ app('jiaoyu.tencent.vod')->ModifyMediaInfo($label, $request->all());
 ### 调用方法 ModifyMediaInfo($label, $params = [])
 
 修改视频基本信息
-$label：配置标识
-$params: 请求参数
+* $label：配置标识
+* $params: 请求参数
 
 | 参数          | 类型        | 说明                                                                |
 |-------------|-----------|-------------------------------------------------------------------|
@@ -152,13 +152,13 @@ $params: 请求参数
 ### 调用方法 getSignature($label)
 
 获取上传签名
-$label：配置标识
+* $label：配置标识
 
 ### 调用方法 ProcessMediaByProcedure($label, $params = [])
 
 对视频执行转码
-$label：配置标识
-$params: 请求参数
+* $label：配置标识
+* $params: 请求参数
 
 | 参数              | 类型        | 说明                                                                |
 |-----------------|-----------|-------------------------------------------------------------------|
@@ -172,8 +172,9 @@ $params: 请求参数
 ### 调用方法 DescribeTaskDetail($label, $params = [])
 
 获取任务详情
-$label：配置标识
-$params: 请求参数
+
+* $label：配置标识
+* $params: 请求参数
 
 | 参数     | 类型        | 说明   |
 |--------|-----------|------|
@@ -182,7 +183,7 @@ $params: 请求参数
 #### 调用方法 send($label, $action, $params = [])
 
 发送请求
-$label：配置标识
-$action：腾讯云端的方法
-$params: 请求参数，具体参考要请求的`$action`的腾讯文档
+* $label：配置标识
+* $action：腾讯云端的方法
+* $params: 请求参数，具体参考要请求的`$action`的腾讯文档
 

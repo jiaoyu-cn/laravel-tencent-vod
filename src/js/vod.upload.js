@@ -90,39 +90,46 @@ Vodupload.prototype = {
             // 对文件进行遍历
             for (let tmpFile of curFile) {
 
+                let tmpUrl = URL.createObjectURL(tmpFile);
+                let fileInfo = {
+                    key:tmpUrl.substr(tmpUrl.lastIndexOf('/')+1),
+                    file: tmpFile,
+                    message:''
+                };
+
                 // 文件个数判断
                 if (Object.keys(that.uploadFiles).length >= that.config.maxFiles){
-                    that.callback('files', 'error',"超过最大上传" + that.config.maxFiles+'个限制，文件<code>'+ tmpFile.name +'</code>无法上传');
+                    fileInfo.message = "超过最大上传" + that.config.maxFiles+'个限制，文件'+ tmpFile.name +'无法上传';
+                    that.callback('files', 'error', fileInfo);
                     return;
                 }
 
                 // 文件类型判断
                 let fileType = tmpFile.name.slice(tmpFile.name.lastIndexOf('.'));
                 if(that.config.acceptedFiles.indexOf(fileType) == -1) {
-                    that.callback('files', 'error',"文件<code>" + tmpFile.name + '</code>的类型不支持');
+                    fileInfo.message = "文件" + tmpFile.name + '的类型不支持';
+                    that.callback('files', 'error',fileInfo);
                     continue;
                 }
 
                 // 文件大小判断
                 if (tmpFile.size > that.config.maxFilesize * 1048576){
-                    that.callback('files', 'error',"文件<code>" + tmpFile.name + '</code>的超过限制大小');
+                    fileInfo.message = "文件" + tmpFile.name + '的超过限制大小';
+                    that.callback('files', 'error', fileInfo);
                     continue;
                 }
 
-                that.bind(tmpFile);
+                that.bind(fileInfo);
             }
         });
     },
     // 绑定上传事件
-    bind:function(file){
-        if (typeof file != "object") return;;
-
-        let tmpUrl = URL.createObjectURL(file);
-        let tmpHash = tmpUrl.substr(tmpUrl.lastIndexOf('/')+1)
+    bind:function(fileInfo){
+        if (typeof fileInfo.file!= "object") return;;
 
         // 上传实例
         let tmpParam = {
-            mediaFile: file,
+            mediaFile: fileInfo.file,
             progressInterval:this.config.progressInterval,
             fileParallelLimit:1,
             chunkParallelLimit:1,
@@ -136,14 +143,14 @@ Vodupload.prototype = {
         // this.uploadFiles[tmpHash] = file;
         // return;
 
-        this.uploadFiles[tmpHash] = this.tenvod.upload(tmpParam);
+        this.uploadFiles[fileInfo.key] = this.tenvod.upload(tmpParam);
 
         // 绑定回调事件
         let that = this;
         for (let tmpEvent of this.event) {
-            this.uploadFiles[tmpHash].on(tmpEvent, function (info){
-                info.key = tmpHash;
-                info.file = that.uploadFiles[tmpHash];
+            this.uploadFiles[fileInfo.key].on(tmpEvent, function (info){
+                info.key = fileInfo.key;
+                info.file = that.uploadFiles[fileInfo.key];
 
                 if (typeof tmpEvent == "string"){
                     tmpEvent = tmpEvent.split('_');
@@ -154,10 +161,12 @@ Vodupload.prototype = {
         }
 
         // 绑定完成事件
-        this.uploadFiles[tmpHash].done().then(function (info){
-            that.uploadFiles[tmpHash]['doneResult'] = info;
-            info.key = tmpHash;
-            info.file = that.uploadFiles[tmpHash];
+        this.uploadFiles[fileInfo.key].done().then(function (info){
+            that.uploadFiles[fileInfo.key]['doneResult'] = info;
+
+            info.key = fileInfo.key;
+            info.file = that.uploadFiles[fileInfo.key];
+
 
             // 设置视频的存放时间
             if (typeof that.config.expireTime != "undefined"){
@@ -196,6 +205,15 @@ Vodupload.prototype = {
     // 获取当前文件列表
     getFiles:function (){
         return this.uploadFiles;
+    },
+    //取消上传
+    cannelFile:function (key){
+        let curFile = this.getFile(key);
+        if(typeof curFile == "object"){
+            curFile.cancel();
+        }
+
+        return true;
     }
 
 };

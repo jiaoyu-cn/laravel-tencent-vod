@@ -106,6 +106,42 @@ class VodProvider extends ServiceProvider
         return $this->send($label, __FUNCTION__, $params);
     }
 
+    /**
+     * 获取视频信息
+     * @param $label
+     * @param $params
+     * @return array
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     */
+    public function DescribeMediaInfos($label, $params = [])
+    {
+        $whiteParam = ['FileIds', 'Filters'];
+        foreach ($params as $key => $val){
+            if (!in_array($key, $whiteParam)){
+                unset($params[$key]);
+                continue;
+            }
+
+            if (is_string($params[$key])) {
+                $params[$key][] = $params[$key];
+            }
+
+        }
+        return $this->send($label, __FUNCTION__, $params);
+    }
+
+    /**
+     * 删除视频
+     * @param $label
+     * @param $params
+     * @return array
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     */
+    public function DeleteMedia($label, $params = [])
+    {
+        $param['FileId'] = $params['FileId']??'';
+        return $this->send($label, __FUNCTION__, $params);
+    }
 
     /**
      * 视频转码
@@ -140,19 +176,6 @@ class VodProvider extends ServiceProvider
     public function DescribeTaskDetail($label, $params = [])
     {
         $param['TaskId'] = $params['TaskId']??'';
-        return $this->send($label, __FUNCTION__, $params);
-    }
-
-    /**
-     * 删除视频
-     * @param $label
-     * @param $params
-     * @return array
-     * @throws \GuzzleHttp\Exception\GuzzleException
-     */
-    public function DeleteMedia($label, $params = [])
-    {
-        $param['FileId'] = $params['FileId']??'';
         return $this->send($label, __FUNCTION__, $params);
     }
 

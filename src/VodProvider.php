@@ -123,7 +123,7 @@ class VodProvider extends ServiceProvider
             }
 
             if (is_string($params[$key])) {
-                $params[$key][] = $params[$key];
+                $params[$key] = [$params[$key]];
             }
 
         }

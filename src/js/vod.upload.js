@@ -72,7 +72,7 @@ class Vodupload {
                 }
 
                 // 文件类型判断
-                let fileType = tmpFile.name.slice(tmpFile.name.lastIndexOf('.'));
+                let fileType = tmpFile.name.slice(tmpFile.name.lastIndexOf('.')).toLowerCase();
                 if(that.config.acceptedFiles.indexOf(fileType) == -1) {
                     fileInfo.message = "文件" + tmpFile.name + '的类型不支持';
                     that.callback('files', 'error',fileInfo);

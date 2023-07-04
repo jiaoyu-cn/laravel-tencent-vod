@@ -1,4 +1,4 @@
-class Vodupload {
+var Vodupload = class {
     // 容器
     #dom;
 

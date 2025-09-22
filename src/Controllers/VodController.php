@@ -9,7 +9,7 @@ class VodController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(config('vod.gloabal.auth'));
+        $this->middleware(config('tencent.vod.global.auth'));
     }
 
     /**

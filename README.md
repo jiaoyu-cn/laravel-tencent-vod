@@ -9,7 +9,7 @@
 ## 安装
 
 ```shell
-composer require githen/laravel-tencent-vod:~v1.0.0
+composer require githen/laravel-tencent-vod:~v2.0.0
 
 # 迁移配置文件
 php artisan vendor:publish --provider="Githen\LaravelTencentVod\VodProvider"
@@ -20,29 +20,29 @@ php artisan vendor:publish --provider="Githen\LaravelTencentVod\VodProvider"
 ```php
 return [
     /**
-    |--------------------------------------------------------------------------
-    | 腾讯视频上传配置
-    |--------------------------------------------------------------------------
-    |  '标识' => [
-     *      'sub_appid' => 0, // 子应用id
-     *      'class_id' => 0  // 应用的分类 id
-     *      'secret_id' => ''  // API授权ID
-     *      'secret_key' => ''  // API授权KEY
+     *  'secret_id' =>  // API密钥SecretId
+     * 'secret_key' =>  // API密钥SecretKey
+     * |--------------------------------------------------------------------------
+     * | 视频上传配置
+     * |--------------------------------------------------------------------------
+     * |  '标识' => [
+     *      'sub_appid' => , //点播应用的SubAppId
+     *      'class_id' => , //点播应用的分类ID
      *       'procedure_name' =>  // 任务流名称
      * ]
      */
 return [
-    'global' => [
-        'signature_url' => true, // 注册路由，生成签名  请求地址：/jiaoyu/tencent/vod/sign/{标识}
-        'auth' => ['auth'], // 路由中间件
-        'size' => 50, // MB
-        'ext' => [".mp4"],
-    ],
+    'secret_id' => '***',
+    'secret_key' => '***',
     'vod' => [
+        'global' => [
+            'signature_url' => true, // 注册路由，生成签名  请求地址：/jiaoyu/tencent/vod/sign/{标识}
+            'auth' => ['auth'], // 路由中间件
+            'size' => 50, // MB
+            'ext' => [".mp4"],
+        ],
         'sub_appid' => env('TENCENT_VOD_SUB_APPID', 0),
         'class_id' => env('CLASS_ID', 0),
-        'secret_id' => '***',
-        'secret_key' => '***',
         'procedure_name' => ''
     ],
 ];

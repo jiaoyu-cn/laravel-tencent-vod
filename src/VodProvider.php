@@ -29,15 +29,15 @@ class VodProvider extends ServiceProvider
     public function boot()
     {
         // 注册签名方法
-        $this->app->singleton('jiaoyu.tencent.vod', function (){
+        $this->app->singleton('jiaoyu.tencent.vod', function () {
             return $this;
         });
 
         // 注册api获取上传签名
-        Route::middleware('web')->get( 'jiaoyu/tencent/vod/sign/{param}', '\Githen\LaravelTencentVod\Controllers\VodController@getSignature')
+        Route::middleware('web')->get('jiaoyu/tencent/vod/sign/{param}', '\Githen\LaravelTencentVod\Controllers\VodController@getSignature')
             ->name('jiaoyu.tencent.vod.sign');
         // 视频存放时长
-        Route::middleware('web')->get( 'jiaoyu/tencent/vod/modify/{param}', '\Githen\LaravelTencentVod\Controllers\VodController@modify')
+        Route::middleware('web')->get('jiaoyu/tencent/vod/modify/{param}', '\Githen\LaravelTencentVod\Controllers\VodController@modify')
             ->name('jiaoyu.tencent.vod.modify');
     }
 
@@ -48,11 +48,11 @@ class VodProvider extends ServiceProvider
     private function updateFile()
     {
         // 发布配置文件
-        $this->publishes([__DIR__.'/config/vod.php' => config_path('vod.php')]);
+        $this->publishes([__DIR__ . '/config/vod.php' => config_path('vod.php')]);
 
         // 发布JS
-        $this->publishes([__DIR__.'/js/vod-js-sdk-v6.js' => public_path('app-assets/js/scripts/qcloud/vod-js-sdk-v6.js')]);
-        $this->publishes([__DIR__.'/js/vod.upload.js' => public_path('app-assets/js/scripts/qcloud/vod.upload.js')]);
+        $this->publishes([__DIR__ . '/js/vod-js-sdk-v6.js' => public_path('app-assets/js/scripts/qcloud/vod-js-sdk-v6.js')]);
+        $this->publishes([__DIR__ . '/js/vod.upload.js' => public_path('app-assets/js/scripts/qcloud/vod.upload.js')]);
     }
 
 
@@ -63,12 +63,12 @@ class VodProvider extends ServiceProvider
     public function getSignature($label)
     {
         // 获取文件配置类型
-        if (!$config = config('vod.'.$label, [])){
-            return $this->message(1, "获取配置文件失败：".$label);
+        if (!$config = config('tencent.' . $label, [])) {
+            return $this->message(1, "获取配置文件失败：" . $label);
         }
 
         $params = [
-            "secretId" => $config['secret_id'] ?? '',
+            "secretId" => config('tencent.secret_id', ''),
             "currentTimeStamp" => time(),
             "expireTime" => time() + 3600,
             "random" => rand(),
@@ -76,7 +76,7 @@ class VodProvider extends ServiceProvider
             'vodSubAppId' => $config['sub_appid'] ?? '',
         ];
         $params = http_build_query($params);
-        $sign = base64_encode(hash_hmac('SHA1', $params, $config['secret_key']?? '', true).$params);
+        $sign = base64_encode(hash_hmac('SHA1', $params, config('tencent.secret_key', ''), true) . $params);
 
         return $this->message(0, '成功', ['sign' => $sign]);
     }
@@ -89,15 +89,15 @@ class VodProvider extends ServiceProvider
      */
     public function ModifyMediaInfo($label, $params = [])
     {
-        $whiteParam = ['FileId', 'Name', 'Description', 'ClassId', 'ExpireTime','CoverData'];
-        foreach ($params as $key => $val){
-            if (!in_array($key, $whiteParam)){
+        $whiteParam = ['FileId', 'Name', 'Description', 'ClassId', 'ExpireTime', 'CoverData'];
+        foreach ($params as $key => $val) {
+            if (!in_array($key, $whiteParam)) {
                 unset($params[$key]);
                 continue;
             }
 
             // 有效期处理
-            if ($key == 'ExpireTime' && is_numeric($params['ExpireTime'])){
+            if ($key == 'ExpireTime' && is_numeric($params['ExpireTime'])) {
                 $params['ExpireTime'] = date('c', time() + $params['ExpireTime']);
             }
             // 封面图处理 可考虑兼容http或文件目录
@@ -116,8 +116,8 @@ class VodProvider extends ServiceProvider
     public function DescribeMediaInfos($label, $params = [])
     {
         $whiteParam = ['FileIds', 'Filters'];
-        foreach ($params as $key => $val){
-            if (!in_array($key, $whiteParam)){
+        foreach ($params as $key => $val) {
+            if (!in_array($key, $whiteParam)) {
                 unset($params[$key]);
                 continue;
             }
@@ -139,7 +139,7 @@ class VodProvider extends ServiceProvider
      */
     public function DeleteMedia($label, $params = [])
     {
-        $param['FileId'] = $params['FileId']??'';
+        $param['FileId'] = $params['FileId'] ?? '';
         return $this->send($label, __FUNCTION__, $params);
     }
 
@@ -151,16 +151,16 @@ class VodProvider extends ServiceProvider
      */
     public function ProcessMediaByProcedure($label, $params = [])
     {
-        $whiteParam = ['FileId','ProcedureName', 'TasksPriority', 'TasksNotifyMode', 'SessionContext', 'SessionId'];
+        $whiteParam = ['FileId', 'ProcedureName', 'TasksPriority', 'TasksNotifyMode', 'SessionContext', 'SessionId'];
 
-        foreach ($params as $key => $val){
-            if (!in_array($key, $whiteParam)){
+        foreach ($params as $key => $val) {
+            if (!in_array($key, $whiteParam)) {
                 unset($params[$key]);
             }
         }
         // 未设置转码流，读配置文件
-        if (empty($params['ProcedureName'])){
-            $params['ProcedureName'] = config('vod.'.$label.'.procedure_name','');
+        if (empty($params['ProcedureName'])) {
+            $params['ProcedureName'] = config('tencent.' . $label . '.procedure_name', '');
         }
 
         return $this->send($label, __FUNCTION__, $params);
@@ -175,7 +175,7 @@ class VodProvider extends ServiceProvider
      */
     public function DescribeTaskDetail($label, $params = [])
     {
-        $param['TaskId'] = $params['TaskId']??'';
+        $param['TaskId'] = $params['TaskId'] ?? '';
         return $this->send($label, __FUNCTION__, $params);
     }
 
@@ -190,14 +190,14 @@ class VodProvider extends ServiceProvider
     public function send($label, $action, $params = [])
     {
         // 获取配置信息
-        if (! $config = config('vod.'.$label)){
-            return $this->message(1, "获取配置文件失败：".$label);
+        if (!$config = config('tencent.' . $label)) {
+            return $this->message(1, "获取配置文件失败：" . $label);
         }
         $params['SubAppId'] = (int)$config['sub_appid'];
 
         // 生成签名
         $curTime = time();
-        $authorization = $this->getAuthorization($config, $params,$action, $curTime);
+        $authorization = $this->getAuthorization($config, $params, $action, $curTime);
 
         // 执行请求
         $client = new Client();
@@ -217,19 +217,19 @@ class VodProvider extends ServiceProvider
                 'json' => $params,
 
             ]);
-        }catch (\Exception $e){
+        } catch (\Exception $e) {
             return $this->message(2, $e->getMessage());
         }
 
-        if ($response->getStatusCode() != 200){
+        if ($response->getStatusCode() != 200) {
             dd($response->getStatusCode(), $response->getReasonPhrase(), $response);
         }
-        if(! $content = json_decode($response->getBody()->getContents(), true)){
+        if (!$content = json_decode($response->getBody()->getContents(), true)) {
             return $this->message(3, '请求失败');
         }
 
-        if (isset($content['Response']['Error'])){
-            return  $this->message(4, $content['Response']['Error']['Message']);
+        if (isset($content['Response']['Error'])) {
+            return $this->message(4, $content['Response']['Error']['Message']);
         }
 
         return $this->message(0, '请求成功', $content);
@@ -246,23 +246,23 @@ class VodProvider extends ServiceProvider
         $credentialScope = $curDate . '/vod/tc3_request';
         $algorithm = "TC3-HMAC-SHA256";
 
-        $canonicalRequest = "POST\n/\n\n".
-            "content-type:application/json; charset=utf-8\n".
-            "host:vod.tencentcloudapi.com\n\n".
-            "content-type;host\n".
+        $canonicalRequest = "POST\n/\n\n" .
+            "content-type:application/json; charset=utf-8\n" .
+            "host:vod.tencentcloudapi.com\n\n" .
+            "content-type;host\n" .
             hash("SHA256", json_encode($params));
 
-        $stringToSign = $algorithm ."\n".
-            $curTime . "\n".
-            $credentialScope . "\n".
+        $stringToSign = $algorithm . "\n" .
+            $curTime . "\n" .
+            $credentialScope . "\n" .
             hash("SHA256", $canonicalRequest);
 
-        $signature = hash_hmac('SHA256', $curDate, 'TC3'.$config['secret_key'], true);
+        $signature = hash_hmac('SHA256', $curDate, 'TC3' . config('tencent.secret_key', ''), true);
         $signature = hash_hmac('SHA256', 'vod', $signature, true);
         $signature = hash_hmac("SHA256", "tc3_request", $signature, true);
         $signature = hash_hmac("SHA256", $stringToSign, $signature);
 
-        return $algorithm .' Credential='.$config['secret_id'].'/'.$credentialScope.', SignedHeaders=content-type;host, Signature='.$signature;
+        return $algorithm . ' Credential=' . config('tencent.secret_id', '') . '/' . $credentialScope . ', SignedHeaders=content-type;host, Signature=' . $signature;
     }
 
     private function message($code, $message, $data = [])
